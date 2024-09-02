@@ -48,7 +48,6 @@ func newConsumer(config *Config) (rocketmq.PushConsumer, error) {
 		consumer.WithInstance(fmt.Sprintf("%s-Consumer", consumerId)),
 		consumer.WithGroupName(config.GroupName),
 		consumer.WithPullInterval(time.Duration(config.PullInterval)*time.Millisecond), //拉消息间隔，单位需要是millisecond
-		consumer.WithConsumerOrder(true),
 		consumer.WithConsumeFromWhere(consumer.ConsumeFromFirstOffset),
 		consumer.WithConsumerModel(consumer.Clustering), //消费模式，默认为clustering
 		//一次消费多少条消息，默认值1，超过32就无意义了，这一批消息将拥有同一个消费状态，
