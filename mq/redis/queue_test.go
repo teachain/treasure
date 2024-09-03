@@ -2,6 +2,7 @@ package redis
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/redis/go-redis/v9"
 	"os"
@@ -9,6 +10,11 @@ import (
 	"testing"
 	"time"
 )
+
+type MsgRequest struct {
+	Msg string `json:"msg"`
+	Age int    `json:"age"`
+}
 
 func TestNewDistributeQueue(t *testing.T) {
 	opt := &redis.Options{
@@ -40,8 +46,13 @@ func TestNewDistributeQueue(t *testing.T) {
 				return
 			default:
 			}
+			msgRequest := &MsgRequest{
+				Msg: "hello",
+				Age: 18,
+			}
+			data, err := json.Marshal(msgRequest)
 			//BatchSize int64
-			id, err := messageQueue.Publish(map[string]any{"time": time.Now().Format(time.DateTime)})
+			id, err := messageQueue.Publish(data)
 			if err != nil {
 				panic(err.Error())
 			}
@@ -53,9 +64,8 @@ func TestNewDistributeQueue(t *testing.T) {
 	}()
 
 	go func() {
-		err := messageQueue.StartConsumer(func(id string, msg interface{}) error {
-			re := msg.(map[string]interface{})
-			fmt.Println("handle message id=", id, "msg=", re["time"])
+		err := messageQueue.StartConsumer(func(id string, msg []byte) error {
+			fmt.Println("handle message id=", id, "msg=", string(msg))
 			return nil
 		})
 		if err != nil {

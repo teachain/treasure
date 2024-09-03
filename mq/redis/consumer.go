@@ -60,9 +60,10 @@ func (m *MessageQueue) consume(ctx context.Context, topic, group, consumer, id s
 	}
 	for _, msg := range result[0].Messages {
 		if _, ok := msg.Values[m.config.TransferKey]; ok {
-			data, ok := msg.Values[m.config.TransferKey].([]byte)
+			value := msg.Values[m.config.TransferKey]
+			data, ok := value.(string)
 			if ok {
-				err := handler(msg.ID, data)
+				err := handler(msg.ID, []byte(data))
 				if err == nil {
 					err := m.client.XAck(ctx, topic, group, msg.ID).Err()
 					if err != nil {

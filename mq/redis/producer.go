@@ -16,7 +16,7 @@ func (m *MessageQueue) Publish(body []byte) (string, error) {
 		MaxLen: m.config.MaxLen,
 		Approx: true,
 		ID:     "*",
-		Values: map[string][]byte{m.config.TransferKey: body},
+		Values: map[string]any{m.config.TransferKey: body},
 	})
 	err := res.Err()
 	if err != nil {
