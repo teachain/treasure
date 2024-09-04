@@ -17,6 +17,8 @@ type Config struct {
 	Retries      int      //重试次数
 	Tag          string   //标签
 	PullInterval int      //数据拉取间隔
+	AccessKey    string   //鉴权
+	SecretKey    string   //鉴权
 }
 
 func NewRocketMessageQueue(config *Config) mq.MessageQueue {

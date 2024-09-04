@@ -18,6 +18,8 @@ func TestNewRocketMessageQueue(t *testing.T) {
 		Retries:      3,
 		Tag:          "my",
 		PullInterval: 0,
+		AccessKey:    "123456",
+		SecretKey:    "78909",
 	})
 	producer := NewRocketMessageQueue(&Config{
 		Addr:         []string{"192.168.4.33:9876", "192.168.4.33:9876"},
@@ -26,6 +28,8 @@ func TestNewRocketMessageQueue(t *testing.T) {
 		Retries:      3,
 		Tag:          "my",
 		PullInterval: 0,
+		AccessKey:    "123456",
+		SecretKey:    "78901",
 	})
 
 	stop := make(chan struct{})

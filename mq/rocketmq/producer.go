@@ -28,14 +28,25 @@ func (r *RocketMessageQueue) Publish(body []byte) (string, error) {
 }
 
 func newProducer(config *Config) (rocketmq.Producer, error) {
-	//TODO:对域名进行解析
-	nameServer, err := primitive.NewNamesrvAddr(config.Addr...)
-	publisher, err := rocketmq.NewProducer(
-		producer.WithInstanceName(config.GroupName+"Producer"),
-		producer.WithGroupName(config.GroupName),
-		producer.WithNameServer(nameServer),
-		producer.WithRetry(config.Retries),
-	)
+	//对域名进行解析
+	addresses := ResolveDomainNames(config.Addr)
+	nameServer, err := primitive.NewNamesrvAddr(addresses...)
+	if err != nil {
+		return nil, err
+	}
+	options := make([]producer.Option, 0)
+	options = append(options, producer.WithInstanceName(config.GroupName+"Producer"))
+	options = append(options, producer.WithGroupName(config.GroupName))
+	options = append(options, producer.WithNameServer(nameServer))
+	options = append(options, producer.WithRetry(config.Retries))
+	if len(config.AccessKey) > 0 && len(config.SecretKey) > 0 {
+		credentials := primitive.Credentials{
+			AccessKey: config.AccessKey,
+			SecretKey: config.SecretKey,
+		}
+		options = append(options, producer.WithCredentials(credentials))
+	}
+	publisher, err := rocketmq.NewProducer(options...)
 	if err != nil {
 		return nil, err
 	}

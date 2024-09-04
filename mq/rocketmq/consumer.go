@@ -24,9 +24,11 @@ func (r *RocketMessageQueue) StartConsumer(handler mq.MsgHandler) error {
 		for _, msg := range messages {
 			err := handler(msg.MsgId, msg.Body)
 			if err != nil {
-				return consumer.SuspendCurrentQueueAMoment, err
+				//如果返回的是RECONSUME_LATER，则它们都将再次投递。
+				return consumer.ConsumeRetryLater, err
 			}
 		}
+		//即如果消息的消费状态返回的是CONSUME_SUCCESS，则它们都消费成功
 		return consumer.ConsumeSuccess, nil
 
 	})
@@ -41,22 +43,33 @@ func (r *RocketMessageQueue) StartConsumer(handler mq.MsgHandler) error {
 }
 
 func newConsumer(config *Config) (rocketmq.PushConsumer, error) {
-	nameServer, err := primitive.NewNamesrvAddr(config.Addr...)
+	addresses := ResolveDomainNames(config.Addr)
+	nameServer, err := primitive.NewNamesrvAddr(addresses...)
+	if err != nil {
+		return nil, err
+	}
+	options := make([]consumer.Option, 0)
 	consumerId := uuid.New().String()
-	consumerObject, err := rocketmq.NewPushConsumer(
-		consumer.WithNameServer(nameServer),
-		consumer.WithInstance(fmt.Sprintf("%s-Consumer", consumerId)),
-		consumer.WithGroupName(config.GroupName),
-		consumer.WithPullInterval(time.Duration(config.PullInterval)*time.Millisecond), //拉消息间隔，单位需要是millisecond
-		consumer.WithConsumeFromWhere(consumer.ConsumeFromFirstOffset),
-		consumer.WithConsumerModel(consumer.Clustering), //消费模式，默认为clustering
-		//一次消费多少条消息，默认值1，超过32就无意义了，这一批消息将拥有同一个消费状态，
-		//即如果消息的消费状态返回的是CONSUME_SUCCESS，则它们都消费成功，
-		//而如果返回的是RECONSUME_LATER，则它们都将再次投递。
-		consumer.WithConsumeMessageBatchMaxSize(1),
-		//最大重试次数，超过就放入死信DLQ队列，死信队列需要手动创建消费者去消费
-		consumer.WithMaxReconsumeTimes(60),
-	)
+	options = append(options, consumer.WithNameServer(nameServer))
+	options = append(options, consumer.WithInstance(fmt.Sprintf("%s-Consumer", consumerId)))
+	options = append(options, consumer.WithGroupName(config.GroupName))
+	//拉消息间隔，单位需要是millisecond
+	options = append(options, consumer.WithPullInterval(time.Duration(config.PullInterval)*time.Millisecond))
+	options = append(options, consumer.WithConsumeFromWhere(consumer.ConsumeFromFirstOffset))
+	//消费模式，默认为clustering
+	options = append(options, consumer.WithConsumerModel(consumer.Clustering))
+	//一次消费多少条消息，默认值1，超过32就无意义了，这一批消息将拥有同一个消费状态
+	options = append(options, consumer.WithConsumeMessageBatchMaxSize(1))
+	//最大重试次数，超过就放入死信DLQ队列，死信队列需要手动创建消费者去消费
+	options = append(options, consumer.WithMaxReconsumeTimes(60))
+	if len(config.AccessKey) > 0 && len(config.SecretKey) > 0 {
+		credentials := primitive.Credentials{
+			AccessKey: config.AccessKey,
+			SecretKey: config.SecretKey,
+		}
+		options = append(options, consumer.WithCredentials(credentials))
+	}
+	consumerObject, err := rocketmq.NewPushConsumer(options...)
 	if err != nil {
 		return nil, err
 	}
