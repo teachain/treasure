@@ -2,6 +2,8 @@ package rocketmq
 
 import (
 	"context"
+	"fmt"
+	"github.com/google/uuid"
 	"os"
 	"strconv"
 	"time"
@@ -35,7 +37,8 @@ func newProducer(config *Config) (rocketmq.Producer, error) {
 		return nil, err
 	}
 	options := make([]producer.Option, 0)
-	options = append(options, producer.WithInstanceName(config.GroupName+"Producer"))
+	producerId := uuid.New().String()
+	options = append(options, producer.WithInstanceName(fmt.Sprintf("%s_%s", config.GroupName, producerId)))
 	options = append(options, producer.WithGroupName(config.GroupName))
 	options = append(options, producer.WithNameServer(nameServer))
 	options = append(options, producer.WithRetry(config.Retries))
