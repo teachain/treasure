@@ -12,14 +12,15 @@ import (
 )
 
 type MsgRequest struct {
-	Msg string `json:"msg"`
-	Age int    `json:"age"`
+	Msg  string `json:"msg"`
+	Age  int    `json:"age"`
+	Time string `json:"time"`
 }
 
 func TestNewDistributeQueue(t *testing.T) {
 	opt := &redis.ClusterOptions{
-		Addrs:    []string{"127.0.0.1:6379"},
-		Password: "123456",
+		Addrs:    []string{"192.168.66.14:7001", "192.168.66.14:7002", "192.168.66.14:7003", "192.168.66.14:7004", "192.168.66.14:7005", "192.168.66.14:7006"},
+		Password: "utlo#i%Tv*dh;lEf&*l%",
 	}
 	client := redis.NewClusterClient(opt)
 
@@ -46,8 +47,9 @@ func TestNewDistributeQueue(t *testing.T) {
 			default:
 			}
 			msgRequest := &MsgRequest{
-				Msg: "hello",
-				Age: 18,
+				Msg:  "hello",
+				Age:  18,
+				Time: time.Now().Format("2006-01-02 15:04:05"),
 			}
 			data, err := json.Marshal(msgRequest)
 			//BatchSize int64
@@ -112,8 +114,9 @@ func TestMessageQueue_Publish(t *testing.T) {
 			default:
 			}
 			msgRequest := &MsgRequest{
-				Msg: "hello",
-				Age: 18,
+				Msg:  "hello",
+				Age:  18,
+				Time: time.Now().Format("2006-01-02 15:04:05"),
 			}
 			data, err := json.Marshal(msgRequest)
 			//BatchSize int64

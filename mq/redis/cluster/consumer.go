@@ -69,6 +69,12 @@ func (m *MessageQueue) consume(ctx context.Context, topic, group, consumer, id s
 					if err != nil {
 						return err
 					}
+					result := m.client.XDel(ctx, topic, msg.ID)
+					if result.Err() != nil {
+						fmt.Println("remove message fail", result.Err())
+					} else {
+						fmt.Println("remove message success", msg.ID)
+					}
 				}
 			}
 		} else {

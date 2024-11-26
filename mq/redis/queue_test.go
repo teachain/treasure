@@ -12,8 +12,9 @@ import (
 )
 
 type MsgRequest struct {
-	Msg string `json:"msg"`
-	Age int    `json:"age"`
+	Msg  string `json:"msg"`
+	Age  int    `json:"age"`
+	Time string `json:"time"`
 }
 
 func TestNewDistributeQueue(t *testing.T) {
@@ -47,10 +48,13 @@ func TestNewDistributeQueue(t *testing.T) {
 			default:
 			}
 			msgRequest := &MsgRequest{
-				Msg: "hello",
-				Age: 18,
+				Msg:  "hello",
+				Age:  18,
+				Time: time.Now().Format("2006-01-02 15:04:05"),
 			}
 			data, err := json.Marshal(msgRequest)
+
+			fmt.Println("data=", string(data))
 			//BatchSize int64
 			id, err := messageQueue.Publish(data)
 			if err != nil {
